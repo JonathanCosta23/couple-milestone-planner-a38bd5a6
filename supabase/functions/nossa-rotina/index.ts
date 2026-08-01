@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const FUNCTION_PATH = "/functions/v1/nossa-rotina";
+const FUNCTION_SLUG = "nossa-rotina";
+const FUNCTION_PATH = `/functions/v1/${FUNCTION_SLUG}`;
 const GITHUB_BASE =
   "https://raw.githubusercontent.com/JonathanCosta23/couple-milestone-planner-a38bd5a6/main/nossa-rotina/";
 
@@ -10,6 +11,15 @@ const files: Record<string, string> = {
   "app.js": "application/javascript; charset=utf-8",
   "manifest.webmanifest": "application/manifest+json; charset=utf-8",
 };
+
+function requestedFile(url: URL): string {
+  const segments = url.pathname.split("/").filter(Boolean);
+  const slugIndex = segments.lastIndexOf(FUNCTION_SLUG);
+  const relative = slugIndex >= 0
+    ? segments.slice(slugIndex + 1).join("/")
+    : "";
+  return relative || "index.html";
+}
 
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") {
@@ -27,17 +37,12 @@ Deno.serve(async (request: Request) => {
 
   if (url.searchParams.get("health") === "1") {
     return Response.json(
-      { ok: true, service: "nossa-rotina" },
+      { ok: true, service: FUNCTION_SLUG, version: 2 },
       { headers: { "Cache-Control": "no-store" } },
     );
   }
 
-  const markerIndex = url.pathname.indexOf(FUNCTION_PATH);
-  let path = markerIndex >= 0
-    ? url.pathname.slice(markerIndex + FUNCTION_PATH.length).replace(/^\/+/, "")
-    : "";
-
-  if (!path) path = "index.html";
+  const path = requestedFile(url);
   if (!(path in files)) {
     return new Response("Arquivo não encontrado", { status: 404 });
   }

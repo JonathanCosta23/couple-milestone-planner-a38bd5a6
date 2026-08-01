@@ -1,1 +1,2 @@
 Temporary live smoke-test marker. Do not merge.
+Validation rerun after Supabase Edge hosting activation.

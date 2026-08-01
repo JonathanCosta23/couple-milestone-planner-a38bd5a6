@@ -1,0 +1,9 @@
+{
+  "name": "Nossa Rotina — Jonathan & Isabella",
+  "short_name": "Nossa Rotina",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#111827",
+  "description": "Cronograma compartilhado e ajustável de Jonathan e Isabella."
+}

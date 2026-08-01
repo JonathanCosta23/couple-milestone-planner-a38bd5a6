@@ -40,6 +40,15 @@ jobs:
           grep -q './app.js' nossa-rotina/index.html
       - name: Check public application
         run: |
-          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "${PUBLIC_URL}?health=1" | grep -q '"ok":true'
-          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "$PUBLIC_URL" | grep -q 'Nossa Rotina'
-          curl --fail --silent --show-error --location --retry 3 "${PUBLIC_URL}app.js" | grep -q 'routine_create_household'
+          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "${PUBLIC_URL}?health=1" --output /tmp/health.json
+          node -e "const value=JSON.parse(require('fs').readFileSync('/tmp/health.json','utf8')); if(value.ok!==true) process.exit(1)"
+
+          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "$PUBLIC_URL" --output /tmp/nossa-rotina-index.html
+          test -s /tmp/nossa-rotina-index.html
+          grep -q '<title>Nossa Rotina' /tmp/nossa-rotina-index.html
+          grep -q 'id="boot"' /tmp/nossa-rotina-index.html
+
+          curl --fail --silent --show-error --location --retry 3 "${PUBLIC_URL}app.js" --output /tmp/nossa-rotina-app.js
+          test -s /tmp/nossa-rotina-app.js
+          node --check /tmp/nossa-rotina-app.js
+          grep -q 'routine_create_household' /tmp/nossa-rotina-app.js

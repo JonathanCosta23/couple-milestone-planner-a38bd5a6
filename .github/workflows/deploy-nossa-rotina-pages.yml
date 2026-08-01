@@ -4,13 +4,17 @@ on:
   push:
     branches: [main]
     paths:
+      - "index.html"
       - "nossa-rotina/**"
+      - "scripts/test-nossa-rotina-runtime.mjs"
       - "supabase/functions/nossa-rotina/**"
       - ".github/workflows/deploy-nossa-rotina-pages.yml"
   pull_request:
     branches: [main]
     paths:
+      - "index.html"
       - "nossa-rotina/**"
+      - "scripts/test-nossa-rotina-runtime.mjs"
       - "supabase/functions/nossa-rotina/**"
       - ".github/workflows/deploy-nossa-rotina-pages.yml"
   workflow_dispatch:
@@ -31,15 +35,26 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
       - name: Validate source files
         run: |
+          test -f index.html
           test -f nossa-rotina/index.html
           test -f nossa-rotina/styles.css
           test -f nossa-rotina/app.js
           test -f nossa-rotina/manifest.webmanifest
+          test -f scripts/test-nossa-rotina-runtime.mjs
           test -f supabase/functions/nossa-rotina/index.ts
           node --check nossa-rotina/app.js
           node -e "JSON.parse(require('fs').readFileSync('nossa-rotina/manifest.webmanifest','utf8'))"
+          grep -q 'functions/v1/nossa-rotina' index.html
+
+      - name: Install runtime test dependencies
+        run: npm ci --ignore-scripts
 
       - name: Check public application
         run: |
@@ -55,3 +70,4 @@ jobs:
           grep -q 'id="authView"' /tmp/nossa-rotina.html
           ! grep -q 'src="./app.js"' /tmp/nossa-rotina.html
           ! grep -q 'href="./styles.css"' /tmp/nossa-rotina.html
+          node scripts/test-nossa-rotina-runtime.mjs /tmp/nossa-rotina.html

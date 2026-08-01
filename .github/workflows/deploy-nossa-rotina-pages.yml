@@ -22,6 +22,9 @@ concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PUBLIC_URL: https://jonathancosta23.github.io/couple-milestone-planner-a38bd5a6/
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -37,6 +40,11 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('nossa-rotina/manifest.webmanifest','utf8'))"
           grep -q './styles.css' nossa-rotina/index.html
           grep -q './app.js' nossa-rotina/index.html
+      - name: Check production availability
+        if: github.event_name == 'pull_request'
+        run: |
+          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "$PUBLIC_URL" | grep -q 'Nossa Rotina'
+          curl --fail --silent --show-error --location --retry 3 "$PUBLIC_URL/app.js" | grep -q 'routine_create_household'
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -54,3 +62,7 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Smoke test deployed site
+        run: |
+          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "${{ steps.deployment.outputs.page_url }}" | grep -q 'Nossa Rotina'
+          curl --fail --silent --show-error --location --retry 3 "${{ steps.deployment.outputs.page_url }}app.js" | grep -q 'routine_create_household'

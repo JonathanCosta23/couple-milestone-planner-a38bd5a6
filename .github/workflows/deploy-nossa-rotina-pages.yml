@@ -6,6 +6,11 @@ on:
     paths:
       - "nossa-rotina/**"
       - ".github/workflows/deploy-nossa-rotina-pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "nossa-rotina/**"
+      - ".github/workflows/deploy-nossa-rotina-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -14,28 +19,38 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate files
-        run: test -f nossa-rotina/index.html
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: nossa-rotina
+      - uses: actions/checkout@v6
+      - name: Validate application files
+        run: |
+          test -f nossa-rotina/index.html
+          test -f nossa-rotina/styles.css
+          test -f nossa-rotina/app.js
+          test -f nossa-rotina/manifest.webmanifest
+          node --check nossa-rotina/app.js
+          node -e "JSON.parse(require('fs').readFileSync('nossa-rotina/manifest.webmanifest','utf8'))"
+          grep -q './styles.css' nossa-rotina/index.html
+          grep -q './app.js' nossa-rotina/index.html
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: validate
     steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: nossa-rotina
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

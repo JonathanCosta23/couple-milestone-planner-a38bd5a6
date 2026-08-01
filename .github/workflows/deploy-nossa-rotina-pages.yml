@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - "nossa-rotina/**"
+      - "supabase/functions/nossa-rotina/**"
       - ".github/workflows/deploy-nossa-rotina-pages.yml"
   pull_request:
     branches: [main]
     paths:
       - "nossa-rotina/**"
+      - "supabase/functions/nossa-rotina/**"
       - ".github/workflows/deploy-nossa-rotina-pages.yml"
   workflow_dispatch:
 
@@ -28,27 +30,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Validate application files
+
+      - name: Validate source files
         run: |
           test -f nossa-rotina/index.html
           test -f nossa-rotina/styles.css
           test -f nossa-rotina/app.js
           test -f nossa-rotina/manifest.webmanifest
+          test -f supabase/functions/nossa-rotina/index.ts
           node --check nossa-rotina/app.js
           node -e "JSON.parse(require('fs').readFileSync('nossa-rotina/manifest.webmanifest','utf8'))"
-          grep -q './styles.css' nossa-rotina/index.html
-          grep -q './app.js' nossa-rotina/index.html
+
       - name: Check public application
         run: |
-          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "${PUBLIC_URL}?health=1" --output /tmp/health.json
-          node -e "const value=JSON.parse(require('fs').readFileSync('/tmp/health.json','utf8')); if(value.ok!==true) process.exit(1)"
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 5 "${PUBLIC_URL}?health=1" --output /tmp/health.json
+          node -e "const value=JSON.parse(require('fs').readFileSync('/tmp/health.json','utf8')); if(value.ok!==true || value.version<3 || value.delivery!=='single-html') process.exit(1)"
 
-          curl --fail --silent --show-error --location --retry 6 --retry-delay 10 "$PUBLIC_URL" --output /tmp/nossa-rotina-index.html
-          test -s /tmp/nossa-rotina-index.html
-          grep -q '<title>Nossa Rotina' /tmp/nossa-rotina-index.html
-          grep -q 'id="boot"' /tmp/nossa-rotina-index.html
-
-          curl --fail --silent --show-error --location --retry 3 "${PUBLIC_URL}app.js" --output /tmp/nossa-rotina-app.js
-          test -s /tmp/nossa-rotina-app.js
-          node --check /tmp/nossa-rotina-app.js
-          grep -q 'routine_create_household' /tmp/nossa-rotina-app.js
+          curl --fail --silent --show-error --location --retry 8 --retry-delay 5 "$PUBLIC_URL" --output /tmp/nossa-rotina.html
+          test -s /tmp/nossa-rotina.html
+          test "$(wc -c < /tmp/nossa-rotina.html)" -gt 100000
+          grep -q '<title>Nossa Rotina' /tmp/nossa-rotina.html
+          grep -q 'name="nossa-rotina-build" content="edge-inline-v3"' /tmp/nossa-rotina.html
+          grep -q 'routine_create_household' /tmp/nossa-rotina.html
+          grep -q 'id="authView"' /tmp/nossa-rotina.html
+          ! grep -q 'src="./app.js"' /tmp/nossa-rotina.html
+          ! grep -q 'href="./styles.css"' /tmp/nossa-rotina.html

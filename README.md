@@ -1,73 +1,51 @@
-# Welcome to your Lovable project
+# Nossa Rotina — Jonathan & Isabella
 
-## Project info
+Aplicativo compartilhado para organizar as rotinas individuais de Jonathan e Isabella, com visão semanal conjunta, modos de trabalho e sincronização pelo Supabase.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Abrir o aplicativo
 
-## How can I edit this code?
+**Aplicativo online:**
 
-There are several ways of editing your application.
+https://ytuzerdwjffqgzltjnoo.supabase.co/functions/v1/nossa-rotina/
 
-**Use Lovable**
+> O endereço `https://github.com/JonathanCosta23/couple-milestone-planner-a38bd5a6.git` é usado para clonar o código e não abre o aplicativo no navegador.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Recursos
 
-Changes made via Lovable will be committed automatically to this repo.
+- Login individual para Jonathan e Isabella.
+- Espaço compartilhado por código de convite.
+- Rotinas separadas por pessoa.
+- Visão semanal lado a lado.
+- Modos Home office, Presencial, Folga e Personalizado.
+- Criação, edição, exclusão e ordenação de tarefas.
+- Configuração de trabalho, deslocamento, inglês, Salesforce, academia, alimentação e sono.
+- Sincronização em tempo real no Supabase.
+- Interface responsiva para celular e computador.
 
-**Use your preferred IDE**
+## Estrutura
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- `nossa-rotina/`: frontend HTML, CSS e JavaScript.
+- `supabase/functions/nossa-rotina/`: hospedagem pública em uma Supabase Edge Function.
+- `supabase/migrations/`: tabelas, funções, RLS e índices do banco.
+- `.github/workflows/deploy-nossa-rotina-pages.yml`: validação automática do código e do endereço público.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Executar localmente
 
-Follow these steps:
+Sirva a pasta `nossa-rotina` por HTTP. Não abra o arquivo diretamente com `file://`, porque autenticação e redirecionamentos dependem de uma origem HTTP.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Exemplo com Python:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+cd nossa-rotina
+python -m http.server 8080
 ```
 
-**Edit a file directly in GitHub**
+Depois abra:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```text
+http://localhost:8080
+```
 
-**Use GitHub Codespaces**
+## Aplicação React original
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+O repositório também contém uma aplicação React/Vite anterior na raiz. O produto **Nossa Rotina** utilizado por Jonathan e Isabella está na pasta `nossa-rotina` e é publicado pelo Supabase.

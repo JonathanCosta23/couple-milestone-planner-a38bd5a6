@@ -59,15 +59,16 @@ jobs:
       - name: Check public application
         run: |
           curl --fail --silent --show-error --location --retry 8 --retry-delay 5 "${PUBLIC_URL}?health=1" --output /tmp/health.json
-          node -e "const value=JSON.parse(require('fs').readFileSync('/tmp/health.json','utf8')); if(value.ok!==true || value.version<3 || value.delivery!=='single-html') process.exit(1)"
+          node -e "const value=JSON.parse(require('fs').readFileSync('/tmp/health.json','utf8')); if(value.ok!==true || value.version<4 || value.delivery!=='inline-app-external-sdk') process.exit(1)"
 
           curl --fail --silent --show-error --location --retry 8 --retry-delay 5 "$PUBLIC_URL" --output /tmp/nossa-rotina.html
           test -s /tmp/nossa-rotina.html
-          test "$(wc -c < /tmp/nossa-rotina.html)" -gt 100000
+          test "$(wc -c < /tmp/nossa-rotina.html)" -gt 40000
           grep -q '<title>Nossa Rotina' /tmp/nossa-rotina.html
-          grep -q 'name="nossa-rotina-build" content="edge-inline-v3"' /tmp/nossa-rotina.html
+          grep -q 'name="nossa-rotina-build" content="edge-inline-v4"' /tmp/nossa-rotina.html
           grep -q 'routine_create_household' /tmp/nossa-rotina.html
           grep -q 'id="authView"' /tmp/nossa-rotina.html
+          grep -q 'cdn.jsdelivr.net/npm/@supabase/supabase-js' /tmp/nossa-rotina.html
           ! grep -q 'src="./app.js"' /tmp/nossa-rotina.html
           ! grep -q 'href="./styles.css"' /tmp/nossa-rotina.html
           node scripts/test-nossa-rotina-runtime.mjs /tmp/nossa-rotina.html

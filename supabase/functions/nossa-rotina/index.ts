@@ -4,7 +4,7 @@ const FUNCTION_SLUG = "nossa-rotina";
 const GITHUB_BASE = "https://raw.githubusercontent.com/JonathanCosta23/couple-milestone-planner-a38bd5a6/main/nossa-rotina/";
 const SUPABASE_UMD = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js";
 
-let bundlePromise: Promise<string> | null = null;
+let sourcePromise: Promise<{ indexHtml: string; styles: string; appJs: string }> | null = null;
 
 function escapeClosingTag(source: string, tag: string): string {
   return source.replace(new RegExp(`</${tag}`, "gi"), `<\\/${tag}`);
@@ -18,15 +18,25 @@ async function fetchText(url: string): Promise<string> {
   return await response.text();
 }
 
-async function buildBundle(): Promise<string> {
-  const [indexHtml, styles, appJs, supabaseJs] = await Promise.all([
+async function loadSource(): Promise<{ indexHtml: string; styles: string; appJs: string }> {
+  sourcePromise ??= Promise.all([
     fetchText(`${GITHUB_BASE}index.html`),
     fetchText(`${GITHUB_BASE}styles.css`),
     fetchText(`${GITHUB_BASE}app.js`),
-    fetchText(SUPABASE_UMD),
-  ]);
+  ]).then(([indexHtml, styles, appJs]) => ({ indexHtml, styles, appJs }));
 
+  try {
+    return await sourcePromise;
+  } catch (error) {
+    sourcePromise = null;
+    throw error;
+  }
+}
+
+async function buildHtml(): Promise<{ html: string; nonce: string }> {
+  const { indexHtml, styles, appJs } = await loadSource();
   const nonce = crypto.randomUUID().replaceAll("-", "");
+
   let html = indexHtml
     .replace(/\s*<link[^>]+rel=["']manifest["'][^>]*>/gi, "")
     .replace(/\s*<link[^>]+href=["']\.\/styles\.css["'][^>]*>/gi, "")
@@ -35,25 +45,15 @@ async function buildBundle(): Promise<string> {
 
   html = html.replace(
     "</head>",
-    `<meta name="nossa-rotina-build" content="edge-inline-v3" /><style nonce="${nonce}">${escapeClosingTag(styles, "style")}</style></head>`,
+    `<meta name="nossa-rotina-build" content="edge-inline-v4" /><style nonce="${nonce}">${escapeClosingTag(styles, "style")}</style></head>`,
   );
 
   html = html.replace(
     "</body>",
-    `<script nonce="${nonce}">${escapeClosingTag(supabaseJs, "script")}</script><script nonce="${nonce}">${escapeClosingTag(appJs, "script")}</script></body>`,
+    `<script nonce="${nonce}" src="${SUPABASE_UMD}"></script><script nonce="${nonce}">${escapeClosingTag(appJs, "script")}</script></body>`,
   );
 
-  return JSON.stringify({ html, nonce });
-}
-
-async function getBundle(): Promise<{ html: string; nonce: string }> {
-  bundlePromise ??= buildBundle();
-  try {
-    return JSON.parse(await bundlePromise);
-  } catch (error) {
-    bundlePromise = null;
-    throw error;
-  }
+  return { html, nonce };
 }
 
 Deno.serve(async (request: Request) => {
@@ -61,7 +61,7 @@ Deno.serve(async (request: Request) => {
 
   if (url.searchParams.get("health") === "1") {
     return Response.json(
-      { ok: true, service: FUNCTION_SLUG, version: 3, delivery: "single-html" },
+      { ok: true, service: FUNCTION_SLUG, version: 4, delivery: "inline-app-external-sdk" },
       { headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -71,14 +71,14 @@ Deno.serve(async (request: Request) => {
   }
 
   try {
-    const { html, nonce } = await getBundle();
+    const { html, nonce } = await buildHtml();
     const headers = new Headers({
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
       "X-Frame-Options": "DENY",
-      "Content-Security-Policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self' https://ytuzerdwjffqgzltjnoo.supabase.co wss://ytuzerdwjffqgzltjnoo.supabase.co; img-src data:; font-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`,
+      "Content-Security-Policy": `default-src 'none'; script-src 'nonce-${nonce}' https://cdn.jsdelivr.net; style-src 'nonce-${nonce}'; connect-src 'self' https://ytuzerdwjffqgzltjnoo.supabase.co wss://ytuzerdwjffqgzltjnoo.supabase.co; img-src data:; font-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`,
     });
     return new Response(request.method === "HEAD" ? null : html, { status: 200, headers });
   } catch (error) {
